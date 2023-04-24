@@ -53,10 +53,12 @@ typedef struct Shoot2{
 static const int screenWidth = 800;
 static const int screenHeight = 450;
 
+static bool gameOver = false;
 static bool gameOver1 = false;
 static bool gameOver2 = false;
 static bool pause =  false;
 static int score = 0;
+static int score2 = 0;
 static bool victory = false;
 
 static Player player = { 0 };
@@ -118,7 +120,9 @@ void InitGame(void)
     activeEnemies = THE_WAVE;
     enemiesKill = 0;
     score = 0;
-
+    score2= 0;
+    
+    
     // Caracteristicas dos jogadores //
     player.rec.x =  20;
     player.rec.y = 50;
@@ -183,31 +187,33 @@ void UpdateGame(void)
 {
     activeEnemies = THE_WAVE;
     wave = THIRD;
-    if (!gameOver1 && !gameOver2)
+    if (!gameOver)
     {
     if (IsKeyPressed('P')) pause = !pause;
 
     if (!pause)
     {
-
+    if (!gameOver1){
             // Movimento do jogador 1
             if (IsKeyDown(KEY_RIGHT)) player.rec.x += player.speed.x;
             if (IsKeyDown(KEY_LEFT)) player.rec.x -= player.speed.x;
             if (IsKeyDown(KEY_UP)) player.rec.y -= player.speed.y;
             if (IsKeyDown(KEY_DOWN)) player.rec.y += player.speed.y;
-
+    }
+    if (!gameOver2)
+    {
             //Movimento do jogador 2
             if (IsKeyDown('D')) player2.rec.x += player2.speed.x;
             if (IsKeyDown('A')) player2.rec.x -= player2.speed.x;
             if (IsKeyDown('W')) player2.rec.y -= player2.speed.y;
             if (IsKeyDown('S')) player2.rec.y += player2.speed.y;
-
+    }
             // Colisao como inimigo
             for (int i = 0; i < activeEnemies; i++)
             {
                 if (CheckCollisionRecs(player.rec, enemy[i].rec)) gameOver1=true;
                 if (CheckCollisionRecs(player2.rec, enemy[i].rec)) gameOver2 = true;
-
+                if (gameOver1==true && gameOver2==true) gameOver=true ;              
             }
              // Onde vai spawnar os inimigo
             for (int i = 0; i < activeEnemies; i++)
@@ -272,16 +278,13 @@ void UpdateGame(void)
                 }
             }
            bala();
-     
-
         }
-    }
-    
-    else
+    } else
     {
         if (IsKeyPressed(KEY_ENTER))
         {
             InitGame();
+            gameOver = false;
             gameOver1 = false;
             gameOver2 = false;
         }
@@ -295,7 +298,7 @@ void DrawGame(void)
 
         ClearBackground(RAYWHITE);
 
-        if (!gameOver1 && !gameOver2)
+        if (!gameOver)
         {
             DrawRectangleRec(player.rec, player.color);
             DrawRectangleRec(player2.rec, player2.color);
@@ -313,13 +316,13 @@ void DrawGame(void)
 
             }
 
-            DrawText(TextFormat("%04i", score), 20, 20, 40, GRAY);
-
+            DrawText(TextFormat("Player 1: %04i", score), 20, 20, 30, GRAY);
+            DrawText(TextFormat("Player 2: %04i", score2), 350, 20, 30, BLACK);
 
             if (pause) DrawText("JOGO PAUSADO", screenWidth/2 - MeasureText("JOGO PAUSADO", 40)/2, screenHeight/2 - 40, 40, GRAY);
         }else {
             DrawText("GAME OVER", GetScreenWidth()/2 - MeasureText("GAME OVER", 20)/2, GetScreenHeight()/2 - 50, 20, RED);
-        DrawText("PRESSIONE [ENTER] PARA RECOMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA RECOMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, BLACK);}
+            DrawText("PRESSIONE [ENTER] PARA RECOMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA RECOMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, BLACK);}
     EndDrawing();
 }
 
@@ -386,7 +389,7 @@ void bala(void){
                               enemy[j].rec.y = GetRandomValue(0, screenHeight - enemy[j].rec.height);
                               shootRate2 = 0;
                               enemiesKill++;
-                              score += 100;
+                              score2 += 100;
                             }
 
                             if (shoot2[i].rec.x + shoot2[i].rec.width >= screenWidth)
