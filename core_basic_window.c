@@ -322,7 +322,9 @@ void DrawGame(void)
             if (pause) DrawText("JOGO PAUSADO", screenWidth/2 - MeasureText("JOGO PAUSADO", 40)/2, screenHeight/2 - 40, 40, GRAY);
         }else {
             DrawText("GAME OVER", GetScreenWidth()/2 - MeasureText("GAME OVER", 20)/2, GetScreenHeight()/2 - 50, 20, RED);
-            DrawText("PRESSIONE [ENTER] PARA RECOMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA RECOMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, BLACK);}
+            DrawText("PRESSIONE [ENTER] PARA RECOMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA RECOMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, BLACK);
+            if (score > score2) DrawText("Vitoria do PLAYER 1",260,20,30,BLACK);
+            if (score2 > score) DrawText("Vitoria do PLAYER 2",260,20,30,BLACK);}
     EndDrawing();
 }
 
