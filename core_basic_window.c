@@ -9,7 +9,7 @@
 //----------------------------------------------------------------------------------
 #define NUM_SHOOTS 50
 #define NUM_MAX_ENEMIES 100
-#define THE_WAVE 70
+#define THE_WAVE 100
 
 typedef enum { FIRST = 0, SECOND, THIRD } EnemyWave;
 
@@ -67,11 +67,12 @@ static Shoot2 shoot2[NUM_SHOOTS] = { 0 };
 static EnemyWave wave = { 0 };
 
 static int shootRate = 0;
-static float alpha = 0.0f;
+static int shootRate2 = 0;
+
 
 static int activeEnemies = 0;
 static int enemiesKill = 0;
-static bool smooth = false;
+
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
@@ -80,12 +81,12 @@ static void InitGame(void);         // A base de todas as coisas
 static void UpdateGame(void);       // Maioria das funcionalidades
 static void DrawGame(void);         // Desenha as coisas
 static void UnloadGame(void);       // carrega
-static void UpdateDrawFrame(void);  
+static void UpdateDrawFrame(void);
 
 
 int main(void)
 {
-    
+
     InitWindow(screenWidth, screenHeight, "Asteroides pow--pow");
 
     InitGame();
@@ -96,21 +97,21 @@ int main(void)
     SetTargetFPS(60);
 
     // Loop principal
-    while (!WindowShouldClose())    
+    while (!WindowShouldClose())
     {
         UpdateDrawFrame();
     }
 #endif
-    
+
     UnloadGame();     // Carregar as coisas (texturas, sons, modelos...)
 
-    CloseWindow();        
+    CloseWindow();
     return 0;
 }
 
 void InitGame(void)
 {
-    // Variaveis principais do jogo // 
+    // Variaveis principais do jogo //
     gameOver1 = false;
     gameOver2 = false;
     victory = false;
@@ -126,7 +127,7 @@ void InitGame(void)
     player.speed.x = 5;
     player.speed.y = 5;
     player.color = BLACK;
-    
+
     player2.rec.x =  20;
     player2.rec.y = 50;
     player2.rec.width = 20;
@@ -153,8 +154,7 @@ void InitGame(void)
     {
         shoot[i].rec.x = player.rec.x;
         shoot[i].rec.y = player.rec.y + player.rec.height/4;
-        shoot[i].rec.x = player2.rec.x;
-        shoot[i].rec.y = player2.rec.y + player.rec.height/4;
+         
         shoot[i].rec.width = 10;
         shoot[i].rec.height = 5;
         shoot[i].speed.x = 7;
@@ -162,13 +162,12 @@ void InitGame(void)
         shoot[i].active = false;
         shoot[i].color = MAROON;
     }
-    
+
     for (int i = 0; i < NUM_SHOOTS; i++)
-    {
-        shoot2[i].rec.x = player.rec.x;
-        shoot2[i].rec.y = player.rec.y + player.rec.height/4;
+    {   
         shoot2[i].rec.x = player2.rec.x;
         shoot2[i].rec.y = player2.rec.y + player.rec.height/4;
+        
         shoot2[i].rec.width = 10;
         shoot2[i].rec.height = 5;
         shoot2[i].speed.x = 7;
@@ -176,13 +175,13 @@ void InitGame(void)
         shoot2[i].active = false;
         shoot2[i].color = BLUE;
     }
-    
+
 }
 
 
 void UpdateGame(void)
 {
-    activeEnemies = THIRD_WAVE;
+    activeEnemies = THE_WAVE;
     wave = THIRD;
     if (!gameOver1 && !gameOver2)
     {
@@ -196,7 +195,7 @@ void UpdateGame(void)
             if (IsKeyDown(KEY_LEFT)) player.rec.x -= player.speed.x;
             if (IsKeyDown(KEY_UP)) player.rec.y -= player.speed.y;
             if (IsKeyDown(KEY_DOWN)) player.rec.y += player.speed.y;
-            
+
             //Movimento do jogador 2
             if (IsKeyDown('D')) player2.rec.x += player2.speed.x;
             if (IsKeyDown('A')) player2.rec.x -= player2.speed.x;
@@ -230,24 +229,24 @@ void UpdateGame(void)
             if (player.rec.x + player.rec.width >= screenWidth) player.rec.x = screenWidth - player.rec.width;
             if (player.rec.y <= 0) player.rec.y = 0;
             if (player.rec.y + player.rec.height >= screenHeight) player.rec.y = screenHeight - player.rec.height;
-            
+
             if (player2.rec.x <= 0) player2.rec.x = 0;
             if (player2.rec.x + player2.rec.width >= screenWidth) player2.rec.x = screenWidth - player2.rec.width;
             if (player2.rec.y <= 0) player2.rec.y = 0;
             if (player2.rec.y + player2.rec.height >= screenHeight) player2.rec.y = screenHeight - player2.rec.height;
-            
-            
-            
-            
 
-            // Começar a atirar jogador 1 // 
-            if (IsKeyDown('L'))
+
+
+
+
+            // Começar a atirar jogador 1 //
+            if (IsKeyDown(KEY_L))
             {
                 shootRate += 5;
 
                 for (int i = 0; i < NUM_SHOOTS; i++)
                 {
-                    if (!shoot[i].active && shootRate%20 == 0)
+                    if (!shoot[i].active && shootRate %20 == 0)
                     {
                         shoot[i].rec.x = player.rec.x;
                         shoot[i].rec.y = player.rec.y + player.rec.height/4;
@@ -256,59 +255,28 @@ void UpdateGame(void)
                     }
                 }
             }
-
             //Começar a atirar jogador 2 //
             if (IsKeyDown(KEY_SPACE))
             {
-                shootRate += 5;
+                shootRate2 += 5;
 
                 for (int i = 0; i < NUM_SHOOTS; i++)
                 {
-                    if (!shoot[i].active && shootRate%20 == 0)
+                    if (!shoot2[i].active && shootRate2 %20 == 0)
                     {
-                        shoot[i].rec.x = player2.rec.x;
-                        shoot[i].rec.y = player2.rec.y + player2.rec.height/4;
-                        shoot[i].active = true;
+                        shoot2[i].rec.x = player2.rec.x;
+                        shoot2[i].rec.y = player2.rec.y + player2.rec.height/4;
+                        shoot2[i].active = true;
                         break;
                     }
                 }
             }
+           bala();
+     
 
-
-            // Tiro
-            for (int i = 0; i < NUM_SHOOTS; i++)
-            {
-                if (shoot[i].active)
-                {
-                    // Movimento do tiro
-                    shoot[i].rec.x += shoot[i].speed.x;
-
-                    // morte dos bixo
-                    for (int j = 0; j < activeEnemies; j++)
-                    {
-                        if (enemy[j].active)
-                        {
-                            if (CheckCollisionRecs(shoot[i].rec, enemy[j].rec))
-                            {
-                                shoot[i].active = false;
-                                enemy[j].rec.x = GetRandomValue(screenWidth, screenWidth + 1000);
-                                enemy[j].rec.y = GetRandomValue(0, screenHeight - enemy[j].rec.height);
-                                shootRate = 0;
-                                enemiesKill++;
-                                score += 100;
-                            }
-
-                            if (shoot[i].rec.x + shoot[i].rec.width >= screenWidth)
-                            {
-                                shoot[i].active = false;
-                                shootRate = 0;
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
+    
     else
     {
         if (IsKeyPressed(KEY_ENTER))
@@ -332,7 +300,7 @@ void DrawGame(void)
             DrawRectangleRec(player.rec, player.color);
             DrawRectangleRec(player2.rec, player2.color);
 
-            
+
             for (int i = 0; i < activeEnemies; i++)
             {
                 if (enemy[i].active) DrawRectangleRec(enemy[i].rec, enemy[i].color);
@@ -340,15 +308,18 @@ void DrawGame(void)
 
             for (int i = 0; i < NUM_SHOOTS; i++)
             {
+                if (shoot2[i].active) DrawRectangleRec(shoot2[i].rec, shoot2[i].color);
                 if (shoot[i].active) DrawRectangleRec(shoot[i].rec, shoot[i].color);
+
             }
 
             DrawText(TextFormat("%04i", score), 20, 20, 40, GRAY);
 
 
             if (pause) DrawText("JOGO PAUSADO", screenWidth/2 - MeasureText("JOGO PAUSADO", 40)/2, screenHeight/2 - 40, 40, GRAY);
-        }
-
+        }else {
+            DrawText("GAME OVER", GetScreenWidth()/2 - MeasureText("GAME OVER", 20)/2, GetScreenHeight()/2 - 50, 20, RED);
+        DrawText("PRESSIONE [ENTER] PARA RECOMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA RECOMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, BLACK);}
     EndDrawing();
 }
 
@@ -363,3 +334,69 @@ void UpdateDrawFrame(void)
     UpdateGame();
     DrawGame();
 }
+void bala(void){
+            // Tiro
+            for (int i = 0; i < NUM_SHOOTS; i++)
+            {
+            if (shoot[i].active)
+            {
+            // Movimento do tiro
+             shoot[i].rec.x += shoot[i].speed.x;
+
+                 // morte dos bixo
+               for (int j = 0; j < activeEnemies; j++)
+                 {
+                  if (enemy[j].active)
+                     {
+                        if (CheckCollisionRecs(shoot[i].rec, enemy[j].rec))
+                          {
+                              shoot[i].active = false;
+                              enemy[j].rec.x = GetRandomValue(screenWidth, screenWidth + 1000);
+                              enemy[j].rec.y = GetRandomValue(0, screenHeight - enemy[j].rec.height);
+                              shootRate = 0;
+                              enemiesKill++;
+                              score += 100;
+                            }
+
+                            if (shoot[i].rec.x + shoot[i].rec.width >= screenWidth)
+                            {
+                                shoot[i].active = false;
+                                shootRate = 0;
+                            }
+                        }
+                    }
+                }
+        }
+        for (int i = 0; i < NUM_SHOOTS; i++)
+            {
+            if (shoot2[i].active)
+            {
+            // Movimento do tiro
+             shoot2[i].rec.x += shoot2[i].speed.x;
+
+                 // morte dos bixo
+               for (int j = 0; j < activeEnemies; j++)
+                 {
+                  if (enemy[j].active)
+                     {
+                        if (CheckCollisionRecs(shoot2[i].rec, enemy[j].rec))
+                          {
+                              shoot2[i].active = false;
+                              enemy[j].rec.x = GetRandomValue(screenWidth, screenWidth + 1000);
+                              enemy[j].rec.y = GetRandomValue(0, screenHeight - enemy[j].rec.height);
+                              shootRate2 = 0;
+                              enemiesKill++;
+                              score += 100;
+                            }
+
+                            if (shoot2[i].rec.x + shoot2[i].rec.width >= screenWidth)
+                            {
+                                shoot2[i].active = false;
+                                shootRate2 = 0;
+                            }
+                        }
+                    }
+                }
+        }
+        
+        }
