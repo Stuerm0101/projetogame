@@ -1,4 +1,8 @@
+
+
+
 #include "raylib.h"
+
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -10,6 +14,7 @@
 #define NUM_SHOOTS 50
 #define NUM_MAX_ENEMIES 100
 #define THE_WAVE 100
+#define Gold 
 
 typedef enum { FIRST = 0, SECOND, THIRD } EnemyWave;
 
@@ -60,7 +65,7 @@ static bool pause =  false;
 static int score = 0;
 static int score2 = 0;
 static bool victory = false;
-
+static bool start = false;
 static Player player = { 0 };
 static Player2 player2 = { 0 };
 static Enemy enemy[NUM_MAX_ENEMIES] = { 0 };
@@ -89,9 +94,16 @@ static void UpdateDrawFrame(void);
 int main(void)
 {
 
-    InitWindow(screenWidth, screenHeight, "Asteroides pow--pow");
+    InitWindow(screenWidth, screenHeight, "ASTEROID RUSH");
+    InitAudioDevice();
+    Sound laserSound = LoadSound("Audiolaser.wav");
+    Sound musicGame = LoadSound("Musicplay.mp3");
+    
+
+
 
     InitGame();
+    
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
@@ -99,16 +111,48 @@ int main(void)
     SetTargetFPS(60);
 
     // Loop principal
+    
+
     while (!WindowShouldClose())
-    {
+    { 
+     
+        if (!start) main_menu();
+        PauseSound(musicGame);
         UpdateDrawFrame();
+        // Verifique se o jogador pressionou a tecla "space"
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            // Reproduza o som do efeito sonoro
+            PlaySound(laserSound);
+        }
+         // Verifique se o jogador pressionou a tecla "L"
+        if (IsKeyPressed(KEY_L))
+        {
+            // Reproduza o som do efeito sonoro
+            PlaySound(laserSound);
+        }
+        
+        if (IsKeyPressed(KEY_P))
+        {
+            // Reproduza o som do efeito sonoro
+            StopSound(laserSound);
+        }
+        if (gameOver)
+        {
+            StopSound(laserSound);
+        }
+       
     }
 #endif
 
-    UnloadGame();     // Carregar as coisas (texturas, sons, modelos...)
-
+    UnloadGame();    // Carregar as coisas (texturas, sons, modelos...)
+    UnloadSound(laserSound);
+    UnloadSound(musicGame);
+    CloseAudioDevice();
+    // Feche a janela e encerre o jogo
     CloseWindow();
-    return 0;
+        
+        return 0;
 }
 
 void InitGame(void)
@@ -130,7 +174,7 @@ void InitGame(void)
     player.rec.height = 20;
     player.speed.x = 5;
     player.speed.y = 5;
-    player.color = BLACK;
+    player.color = GOLD;
 
     player2.rec.x =  20;
     player2.rec.y = 50;
@@ -185,13 +229,18 @@ void InitGame(void)
 
 void UpdateGame(void)
 {
+    
+    
+    
     activeEnemies = THE_WAVE;
     wave = THIRD;
     if (!gameOver)
     {
     if (IsKeyPressed('P')) pause = !pause;
+    
 
     if (!pause)
+        
     {
     if (!gameOver1){
             // Movimento do jogador 1
@@ -199,6 +248,7 @@ void UpdateGame(void)
             if (IsKeyDown(KEY_LEFT)) player.rec.x -= player.speed.x;
             if (IsKeyDown(KEY_UP)) player.rec.y -= player.speed.y;
             if (IsKeyDown(KEY_DOWN)) player.rec.y += player.speed.y;
+            
     }
     if (!gameOver2)
     {
@@ -207,6 +257,7 @@ void UpdateGame(void)
             if (IsKeyDown('A')) player2.rec.x -= player2.speed.x;
             if (IsKeyDown('W')) player2.rec.y -= player2.speed.y;
             if (IsKeyDown('S')) player2.rec.y += player2.speed.y;
+            
     }
             // Colisao como inimigo
             for (int i = 0; i < activeEnemies; i++)
@@ -331,6 +382,7 @@ void DrawGame(void)
 // Unload game variables
 void UnloadGame(void)
 {
+    
     // TODO: Unload all dynamic loaded data (textures, sounds, models...)
 }
 
@@ -338,6 +390,24 @@ void UpdateDrawFrame(void)
 {
     UpdateGame();
     DrawGame();
+}
+void main_menu()
+{
+    while (!start)
+    {
+    BeginDrawing();
+    DrawText("ASTEROID RUSH", GetScreenWidth()/2 - MeasureText("ASTEROID RUSH", 20)/2, GetScreenHeight()/2 - 50, 20, RED);
+    DrawText("PRESSIONE [ENTER] PARA COMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA COMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, GOLD);
+    DrawText("APERTE Q PARA JOGAR APENAS UM PLAYER",80,20,30,GRAY);
+    EndDrawing();
+    if (IsKeyPressed(KEY_ENTER)) start = true;
+    if (IsKeyPressed(KEY_Q))
+    {
+    start= true;
+    gameOver1=true;
+    }
+    
+    }
 }
 void bala(void){
             // Tiro
