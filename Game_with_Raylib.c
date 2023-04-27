@@ -1,8 +1,6 @@
-
-
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "raylib.h"
-
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -14,7 +12,9 @@
 #define NUM_SHOOTS 50
 #define NUM_MAX_ENEMIES 100
 #define THE_WAVE 100
-#define Gold 
+#define Gold
+#define MAX_SCORES 10  
+#define NUM_PLAYERS 2   
 
 typedef enum { FIRST = 0, SECOND, THIRD } EnemyWave;
 
@@ -22,12 +22,14 @@ typedef struct Player{
     Rectangle rec;
     Vector2 speed;
     Color color;
+    Texture2D texture;
 } Player;
 
 typedef struct Player2{
     Rectangle rec;
     Vector2 speed;
     Color color;
+    Texture2D texture;
 } Player2;
 
 
@@ -36,6 +38,7 @@ typedef struct Enemy{
     Vector2 speed;
     bool active;
     Color color;
+    Texture2D texture;
 } Enemy;
 
 typedef struct Shoot{
@@ -43,6 +46,7 @@ typedef struct Shoot{
     Vector2 speed;
     bool active;
     Color color;
+    Texture2D texture;
 } Shoot;
 
 typedef struct Shoot2{
@@ -50,6 +54,7 @@ typedef struct Shoot2{
     Vector2 speed;
     bool active;
     Color color;
+    Texture2D texture;
 } Shoot2;
 
 //------------------------------------------------------------------------------------
@@ -80,6 +85,10 @@ static int shootRate2 = 0;
 static int activeEnemies = 0;
 static int enemiesKill = 0;
 
+int scores[NUM_PLAYERS][MAX_SCORES];  // matriz que armazena as pontuações de cada jogador
+int numScores[NUM_PLAYERS] = {0, 0};  // número atual de pontuações salvas para cada jogador
+int player1Scores = 0;
+int player2Scores = 0;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
@@ -91,20 +100,25 @@ static void UnloadGame(void);       // carrega
 static void UpdateDrawFrame(void);
 
 
+
+
+
+
+
+
 int main(void)
 {
-
-    InitWindow(screenWidth, screenHeight, "ASTEROID RUSH");
+    
+    InitWindow(screenWidth, screenHeight, "ASTEROID R");
     InitAudioDevice();
     Sound laserSound = LoadSound("Audiolaser.wav");
-    Sound musicGame = LoadSound("Musicplay.mp3");
+    Sound MusicHub = LoadSound("Takeonme8bit.mp3");
+    Sound MusicGame = LoadSound("Musicplay.mp3");
+    Rectangle dest = {450, 800, GetScreenHeight()*2, GetScreenWidth()*2};
+    Texture2D background = LoadTexture("spacebackground.png");
     
-
-
-
     InitGame();
     
-
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
 #else
@@ -112,13 +126,21 @@ int main(void)
 
     // Loop principal
     
-
+    LoadScores("scores.csv", player1Scores, player2Scores);
+    
     while (!WindowShouldClose())
     { 
-     
+        PlaySound(MusicHub);
         if (!start) main_menu();
-        PauseSound(musicGame);
+        PauseSound(MusicHub);
+        BeginDrawing();
+        
+        
+        ClearBackground(RAYWHITE); // Limpa a tela com a cor branca
+
+        //Desenhe outros elementos do jogo aqui
         UpdateDrawFrame();
+        DrawTextureRec(background, dest, (Vector2){ 0, 0 },WHITE);
         // Verifique se o jogador pressionou a tecla "space"
         if (IsKeyPressed(KEY_SPACE))
         {
@@ -136,20 +158,36 @@ int main(void)
         {
             // Reproduza o som do efeito sonoro
             StopSound(laserSound);
+            StopSound(MusicGame);
         }
+        
+        if (IsKeyPressed(KEY_M))
+        {
+            PlaySound(MusicGame);
+            
+        }
+        
         if (gameOver)
         {
             StopSound(laserSound);
+            StopSound(MusicGame);   
         }
+                    
        
     }
 #endif
-
-    UnloadGame();    // Carregar as coisas (texturas, sons, modelos...)
+    
+    // Carregar as coisas (texturas, sons, modelos...)
+    
+    //UnloadTexture(background);
     UnloadSound(laserSound);
-    UnloadSound(musicGame);
+    UnloadSound(MusicGame);
+    UnloadSound(MusicHub);
+    
+    UnloadGame();
     CloseAudioDevice();
     // Feche a janela e encerre o jogo
+    EndDrawing();
     CloseWindow();
         
         return 0;
@@ -157,6 +195,7 @@ int main(void)
 
 void InitGame(void)
 {
+    
     // Variaveis principais do jogo //
     gameOver1 = false;
     gameOver2 = false;
@@ -169,17 +208,18 @@ void InitGame(void)
     
     // Caracteristicas dos jogadores //
     player.rec.x =  20;
-    player.rec.y = 50;
-    player.rec.width = 20;
-    player.rec.height = 20;
+    player.rec.y = 450;
+    player.rec.width = 50;
+    player.rec.height = 50;
     player.speed.x = 5;
     player.speed.y = 5;
-    player.color = GOLD;
+    player.color = GRAY;
+    
 
     player2.rec.x =  20;
     player2.rec.y = 50;
-    player2.rec.width = 20;
-    player2.rec.height = 20;
+    player2.rec.width = 50;
+    player2.rec.height = 50;
     player2.speed.x = 5;
     player2.speed.y = 5;
     player2.color = RED;
@@ -208,7 +248,7 @@ void InitGame(void)
         shoot[i].speed.x = 7;
         shoot[i].speed.y = 0;
         shoot[i].active = false;
-        shoot[i].color = MAROON;
+        shoot[i].color = RED;
     }
 
     for (int i = 0; i < NUM_SHOOTS; i++)
@@ -223,15 +263,12 @@ void InitGame(void)
         shoot2[i].active = false;
         shoot2[i].color = BLUE;
     }
-
+    
 }
 
 
 void UpdateGame(void)
 {
-    
-    
-    
     activeEnemies = THE_WAVE;
     wave = THIRD;
     if (!gameOver)
@@ -346,43 +383,90 @@ void UpdateGame(void)
 void DrawGame(void)
 {
     BeginDrawing();
-
-        ClearBackground(RAYWHITE);
-
+    float scale = 50.0f / 128.0f;
+    Texture2D playertexture1 = LoadTexture("spaceshiptest.png");
+    Texture2D playertexture2 = LoadTexture("spaceship.png");
+    Texture2D asteroidtexture = LoadTexture("asteroidnew.png");
+    Texture2D textureshoot = LoadTexture("fireball.png");
+       
         if (!gameOver)
         {
-            DrawRectangleRec(player.rec, player.color);
-            DrawRectangleRec(player2.rec, player2.color);
-
+            DrawTextureEx(playertexture1, (Vector2){player.rec.x, player.rec.y}, 0, scale, WHITE);
+            DrawTextureEx(playertexture2, (Vector2){player2.rec.x, player2.rec.y}, 0, 1, WHITE);
 
             for (int i = 0; i < activeEnemies; i++)
             {
-                if (enemy[i].active) DrawRectangleRec(enemy[i].rec, enemy[i].color);
+                if (enemy[i].active) DrawTextureEx(asteroidtexture, (Vector2){enemy[i].rec.x, enemy[i].rec.y}, 0, 1, WHITE);
             }
 
             for (int i = 0; i < NUM_SHOOTS; i++)
             {
-                if (shoot2[i].active) DrawRectangleRec(shoot2[i].rec, shoot2[i].color);
-                if (shoot[i].active) DrawRectangleRec(shoot[i].rec, shoot[i].color);
+                if (shoot2[i].active) DrawTextureEx(textureshoot, (Vector2){shoot2[i].rec.x, shoot2[i].rec.y}, 0, 1, WHITE);
+                if (shoot[i].active) DrawTextureEx(textureshoot, (Vector2){shoot[i].rec.x, shoot[i].rec.y}, 0, 1, WHITE);//DrawRectangleRec(shoot[i].rec, shoot[i].color);
 
             }
 
             DrawText(TextFormat("Player 1: %04i", score), 20, 20, 30, GRAY);
-            DrawText(TextFormat("Player 2: %04i", score2), 350, 20, 30, BLACK);
+            DrawText(TextFormat("Player 2: %04i", score2), 350, 20, 30, WHITE);
 
             if (pause) DrawText("JOGO PAUSADO", screenWidth/2 - MeasureText("JOGO PAUSADO", 40)/2, screenHeight/2 - 40, 40, GRAY);
-        }else {
+        }
+        else 
+        {
             DrawText("GAME OVER", GetScreenWidth()/2 - MeasureText("GAME OVER", 20)/2, GetScreenHeight()/2 - 50, 20, RED);
-            DrawText("PRESSIONE [ENTER] PARA RECOMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA RECOMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, BLACK);
-            if (score > score2) DrawText("Vitoria do PLAYER 1",260,20,30,BLACK);
-            if (score2 > score) DrawText("Vitoria do PLAYER 2",260,20,30,BLACK);}
+            DrawText("PRESSIONE [ENTER] PARA RECOMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA RECOMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, WHITE);
+            if (score > score2) DrawText("Vitoria do PLAYER 1",260,20,30,WHITE);
+            if (score2 > score) DrawText("Vitoria do PLAYER 2",260,20,30,WHITE);
+            player1Scores = score;
+            player2Scores = score2;
+            SaveScores(player1Scores, player2Scores);
+        }
     EndDrawing();
+}
+
+void SaveScores(int player1scores, int player2scores)
+{
+    FILE *file = fopen("scores.csv", "w");
+
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+    fprintf(file, "%i;%i",player1Scores, player2scores);
+    fclose(file);
+}
+
+void LoadScores(const char *filename, int *player1Scores, int *player2Scores)
+{
+    FILE *file = fopen(filename, "r");
+    if (!FileExists(filename))
+    {
+        SaveFileText(filename, "0;0");
+    }    
+    if (file != NULL) {
+        // Lê as pontuações do arquivo e as armazena nos arrays player1Scores e player2Scores
+            fscanf(file, "%i;%i",&player1Scores, &player2Scores);
+        }
+        score = player1Scores;
+        score2 = player2Scores;
+        fclose(file);
 }
 
 // Unload game variables
 void UnloadGame(void)
 {
+    Texture2D playertexture1 = LoadTexture("spaceshiptest.png");
+    Texture2D asteroidtexture = LoadTexture("asteroide.png");
+    Texture2D textureshoot = LoadTexture("fireball.png");
+    Texture2D playertexture2 = LoadTexture("spaceship.png");
+    Texture2D initialback = LoadTexture("initialback.png");
     
+    UnloadTexture(playertexture1);
+    UnloadTexture(asteroidtexture);
+    UnloadTexture(textureshoot);
+    UnloadTexture(playertexture2);
+    UnloadTexture(initialback);
+    //UnloadTexture(background);
     // TODO: Unload all dynamic loaded data (textures, sounds, models...)
 }
 
@@ -395,10 +479,13 @@ void main_menu()
 {
     while (!start)
     {
+    Texture2D initialback = LoadTexture("initialback.png");
+    Rectangle dest = {450, 800, GetScreenHeight()*2, GetScreenWidth()*2};
     BeginDrawing();
-    DrawText("ASTEROID RUSH", GetScreenWidth()/2 - MeasureText("ASTEROID RUSH", 20)/2, GetScreenHeight()/2 - 50, 20, RED);
+    DrawTextureRec(initialback, dest, (Vector2){ 0, 0 },WHITE);
+    DrawText("ASTEROID RUSH", GetScreenWidth()/2 - MeasureText("ASTEROID RUSH", 20)/2, GetScreenHeight()/2 - 50, 20, WHITE);
     DrawText("PRESSIONE [ENTER] PARA COMEÇAR", GetScreenWidth()/2 - MeasureText("PRESSIONE [ENTER] PARA COMEÇAR", 20)/2, GetScreenHeight()/2 - 10, 20, GOLD);
-    DrawText("APERTE Q PARA JOGAR APENAS UM PLAYER",80,20,30,GRAY);
+    DrawText("APERTE Q PARA JOGAR APENAS UM PLAYER",80,20,30,BLACK);
     EndDrawing();
     if (IsKeyPressed(KEY_ENTER)) start = true;
     if (IsKeyPressed(KEY_Q))
